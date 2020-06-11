@@ -5,7 +5,21 @@
   ],
   "jsRules": {},
   "rules": {
-    "trailing-comma": [false]
+    "trailing-comma": [false],
+    "semicolon": true,
+    "typedef": [
+      true,
+      "call-signature",
+      "arrow-call-signature",
+      "parameter",
+      "arrow-parameter",
+      "property-declaration",
+      "variable-declaration",
+      "member-variable-declaration"
+    ],
+    "quotemark": [true, "single", "avoid-escape", "avoid-template"],
+    "eofline": true,
+    "encoding": true
   },
   "rulesDirectory": []
 }
