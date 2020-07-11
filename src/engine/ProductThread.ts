@@ -1,4 +1,4 @@
-import { Page, ElementHandle } from 'puppeteer';
+import { Page, ElementHandle } from 'puppeteer-core';
 import { Product } from '../models/Product';
 import logger from '../config/logger';
 import Thread from './Thread';

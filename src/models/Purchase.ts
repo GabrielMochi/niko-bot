@@ -1,33 +1,15 @@
-import { Specification } from './Specification';
-import {
-  required, Ref, ref, getModel, document, defaultValue, objectId
-} from 'typeodm.io';
-import { Model, Document, Types } from 'mongoose';
+import Worker from './Worker';
 
-@document()
-export class Purchase {
+export default class Purchase {
 
-  @required() public price: number;
-  @required() @objectId() public productId: Types.ObjectId;
-  @required() @ref(Specification) public specification: Ref<Specification>;
-  @required() @defaultValue(1) public quantity: number;
-  @required() @defaultValue(new Date()) public date: Date;
+  public id: string;
+  public date: Date;
+  public worker: Worker;
 
-  constructor(
-    price: number, productId: Types.ObjectId,
-    specification: Specification, quantity: number = 1,
-    date: Date = new Date()
-  ) {
+  constructor(id: string, date: Date, worker: Worker) {
+    this.id = id;
     this.date = date;
-    this.quantity = quantity;
-    this.price = price;
-    this.specification = specification;
-    this.productId = productId;
+    this.worker = worker;
   }
 
 }
-
-export type PurchaseDocument = Purchase & Document;
-export type PurchaseModel = Model<PurchaseDocument, {}>;
-
-export const PurchaseModel: PurchaseModel = getModel<Purchase>(Purchase);

@@ -1,6 +1,6 @@
 import Database from './Database';
 import logger from '../config/logger';
-import puppeteer, { Browser, Page, ElementHandle } from 'puppeteer';
+import puppeteer, { Browser, Page, ElementHandle } from 'puppeteer-core';
 import { Product } from '../models/Product';
 import Pool from './Pool';
 import ProductThread from './ProductThread';

@@ -1,4 +1,4 @@
-import { ElementHandle } from 'puppeteer';
+import { ElementHandle } from 'puppeteer-core';
 import HTMLValueElement from '../interfaces/HTMLValueElement';
 import Resolve from '../interfaces/Resolve';
 
