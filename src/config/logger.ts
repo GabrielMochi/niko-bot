@@ -9,7 +9,7 @@ const logger: Logger = createLogger({
   transports: [
     new transports.Console({
       level: 'debug',
-      format: format.simple(),
+      format: format.combine(format.colorize(), format.simple()),
       handleExceptions: true
     }),
     new transports.File({

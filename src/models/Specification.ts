@@ -1,6 +1,10 @@
-abstract class Specification {
+import { required, document } from 'typeodm.io';
+import { Document } from 'mongoose';
 
-  public code: string;
+@document()
+export abstract class Specification {
+
+  @required() public code: string;
 
   constructor(code: string) {
     this.code = code;
@@ -8,4 +12,4 @@ abstract class Specification {
 
 }
 
-export default Specification;
+export type SpecificationDocument = Specification & Document;

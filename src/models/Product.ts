@@ -1,24 +1,57 @@
-import Purchase from './Purchase';
+import { Purchase, PurchaseDocument } from './Purchase';
+import {
+  document, required, unique, arrayOf, ref,
+  Ref, defaultValue, getModel, index, method
+} from 'typeodm.io';
+import { Model, Document } from 'mongoose';
 
-class Product {
+@document()
+export class Product {
 
-  public id: string;
-  public url: string;
-  public name: string;
-  public releaseDate: Date;
-  public purchases: Purchase[];
+  @required() @unique() @index() public url: string;
+  @required() public name: string;
+  @required() public releaseDate: Date;
+
+  @required()
+  @arrayOf(Purchase)
+  @ref(Purchase)
+  @defaultValue([])
+  private purchases: Ref<Purchase>[];
 
   constructor(
-    id: string, url: string, name: string,
-    releaseDate: Date, purchases: Purchase[] = []
+    url: string, name: string, releaseDate: Date,
+    purchases: Purchase[] = []
   ) {
-    this.id = id;
     this.url = url;
     this.name = name;
     this.releaseDate = releaseDate;
     this.purchases = purchases;
   }
 
+  @method
+  public async setPurchase(
+    this: ProductDocument,
+    purchase: PurchaseDocument
+  ): Promise<void> {
+    purchase.productId = this._id;
+    await purchase.save();
+
+    this.purchases.push(purchase);
+  }
+
+  @method
+  public async setAllPurchases(
+    this: ProductDocument,
+    purchases: PurchaseDocument[]
+  ): Promise<void> {
+    for (const purchase of purchases) {
+      await this.setPurchase(purchase);
+    }
+  }
+
 }
 
-export default Product;
+export type ProductDocument = Product & Document;
+export type ProductModel = Model<ProductDocument, {}>;
+
+export const ProductModel: ProductModel = getModel<Product>(Product);

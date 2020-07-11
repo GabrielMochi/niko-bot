@@ -6,7 +6,7 @@ const defaultEnvFilePath: string = path.resolve(__dirname, '../../.env');
 
 const customEnvFilePath: string = path.resolve(
   __dirname,
-  `../../${process.env.NODE_ENV};env`
+  `../../.env.${process.env.NODE_ENV}`
 );
 
 if (fs.existsSync(defaultEnvFilePath))

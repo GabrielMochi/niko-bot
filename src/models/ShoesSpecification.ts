@@ -1,16 +1,18 @@
-import Specification from './Specification';
+import { Specification } from './Specification';
+import { document, required, getModel } from 'typeodm.io';
+import { Model, Document } from 'mongoose';
 
-class ShoesSpecification extends Specification {
+@document()
+export class ShoesSpecification extends Specification {
 
   public static readonly code: string = '#000000001';
 
-  public color: string;
-  public size: number;
-  public style: string;
+  @required() public color: string;
+  @required() public size: number;
+  @required() public style: string;
 
   constructor(color: string, size: number, style: string) {
     super(ShoesSpecification.code);
-
     this.color = color;
     this.size = size;
     this.style = style;
@@ -18,4 +20,8 @@ class ShoesSpecification extends Specification {
 
 }
 
-export default ShoesSpecification;
+export type ShoesSpecificationDocument = ShoesSpecification & Document;
+export type ShoesSpecificationModel = Model<ShoesSpecificationDocument, {}>;
+
+export const ShoesSpecificationModel: ShoesSpecificationModel
+  = getModel<ShoesSpecification>(ShoesSpecification);
