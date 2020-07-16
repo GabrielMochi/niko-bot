@@ -1,5 +1,5 @@
 import { Page, ElementHandle } from 'puppeteer-core';
-import { Product } from '../models/Product';
+import Product from '../models/Product';
 import logger from '../config/logger';
 import Thread from './Thread';
 import { CronJob } from 'cron';

@@ -1,13 +1,11 @@
-import Database from './Database';
 import logger from '../config/logger';
 import puppeteer, { Browser, Page, ElementHandle } from 'puppeteer-core';
-import { Product } from '../models/Product';
+import Product from '../models/Product';
 import Pool from './Pool';
 import ProductThread from './ProductThread';
 import Thread from './Thread';
 import { CronJob } from 'cron';
 import { exec, ExecException } from 'child_process';
-import { insertValueLikeTyping } from '../utils/generalUtils';
 import Resolve from '../interfaces/Resolve';
 
 class MainThread extends Thread {
@@ -33,9 +31,6 @@ class MainThread extends Thread {
     try {
       logger.info(`${this.loggerHead} 🔥 starting the thread`);
 
-      await Database.loadConnection();
-      await this.openBrowserInDebugMode();
-
       this.pool = new Pool();
       this.browserUrl = `http://${process.env.BROWSER_HOST}:${process.env.BROWSER_PORT}`;
 
@@ -52,14 +47,13 @@ class MainThread extends Thread {
       this.mainCronJob = new CronJob(
         '0 0 * * * *', // run every hour
         (): Promise<void> => this.refreshScraping(),
-        null,
-        true
+        null
       );
 
       await this.scrapeProductsPage();
     } catch (err) {
       logger.error(`${this.loggerHead} something went wrong while starting the thread: `);
-      logger.error(err);
+      logger.error(err.message);
 
       this.stop();
     }
@@ -171,9 +165,10 @@ class MainThread extends Thread {
 
     const releaseDate: Date = this.getReleaseDate(releaseDateAsHTML);
 
-    const product: Product = new Product(url, name, releaseDate);
+    return null;
+    // const product: Product = new Product(url, name, releaseDate);
 
-    return product;
+    // return product;
   }
 
   private getReleaseDate(innerHTML: string): Date {
@@ -219,30 +214,21 @@ class MainThread extends Thread {
   }
 
   private async login(): Promise<void> {
-    const emailAddressInput: ElementHandle = await this.page.$(
-      'input[type="email"][name="emailAddress"]'
+    const emailSelector: string = 'input[type="email"][name="emailAddress"]';
+    const passwordSelector: string = 'input[type="password"][name="password"]';
+
+    await this.page.$eval(
+      '#anchor-acessar',
+      (el: HTMLLinkElement): void => el.click()
     );
 
-    const passwordInput: ElementHandle = await this.page.$(
-      'input[type="password"][name="password"]'
-    );
-
-    const emailAddressValue: string = await emailAddressInput
-      .evaluate((el: HTMLInputElement): string => el.value);
-
-    const passwordValue: string = await passwordInput
-      .evaluate((el: HTMLInputElement): string => el.value);
-
-    await this.page.$eval('#anchor-acessar', (el: HTMLLinkElement): void => el.click());
     await this.page.waitFor(1000);
 
-    if (!emailAddressValue) {
-      await insertValueLikeTyping(emailAddressInput, process.env.NIKE_LOGIN_EMAIL);
-    }
+    await this.page.click(emailSelector);
+    await this.page.keyboard.type(process.env.NIKE_LOGIN_EMAIL);
 
-    if (!passwordValue) {
-      await insertValueLikeTyping(passwordInput, process.env.NIKE_LOGIN_PASSWORD);
-    }
+    await this.page.click(passwordSelector);
+    await this.page.keyboard.type(process.env.NIKE_LOGIN_PASSWORD);
 
     await this.page.waitFor(1000);
 
