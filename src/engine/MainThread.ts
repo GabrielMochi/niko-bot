@@ -34,7 +34,7 @@ class MainThread extends Thread {
       logger.info(`${this.loggerHead} 🔥 starting the thread`);
 
       await Database.loadConnection();
-      await this.openBrowserInDebugMode();
+      // await this.openBrowserInDebugMode();
 
       this.pool = new Pool();
       this.browserUrl = `http://${process.env.BROWSER_HOST}:${process.env.BROWSER_PORT}`;
@@ -94,32 +94,40 @@ class MainThread extends Thread {
   private async scrapeProductsPage(): Promise<void> {
     logger.info(`${this.loggerHead} 🕸️ scrapping products page`);
 
-    const productsElements: ElementHandle<HTMLDivElement>[]
-      = await this.page.$$('#DadosPaginacaoCalendario .box-resultados .snkr-release');
+    const productsElements: ElementHandle<HTMLDivElement>[] =
+      await this.page.$$('#DadosPaginacaoCalendario .box-resultados .snkr-release');
 
-    for (let i: number = 0; i < productsElements.length; i++) {
-      const productElement: ElementHandle<HTMLDivElement> = productsElements[i];
-      const product: Product = await this.getProductFromProductElement(productElement);
+    const productsAvailable: Product[] = (await Promise.all<Product>(
+      productsElements.map<Promise<Product>>(
+        (productElement: ElementHandle<HTMLDivElement>): Promise<Product> => (
+          this.getProductFromProductElement(productElement)
+        )
+      )
+    ))
+      // .filter((product: Product): boolean => product.releaseDate >= new Date())
+      .filter(({ url }: Product): boolean => !this.pool.productUrlExists(url))
+      .filter(({ name }: Product): boolean => name === 'Air Jordan 1');
+    // if (product.name !== 'Air Jordan 1') continue;
 
-      if (!this.pool.productUrlExists(product.url)) {
-        const productScrapTime: Date = product.releaseDate;
+    productsAvailable.forEach((product: Product, i: number): void => {
+      const productScrapTime: Date = product.releaseDate;
 
-        // start scraping product one minute before its launch
-        // productScrapTime.setMinutes(productScrapTime.getMinutes() - 1);
+      // start scraping product one minute before its launch
+      // productScrapTime.setMinutes(productScrapTime.getMinutes() - 1);
+      productScrapTime.setMinutes(productScrapTime.getMinutes() + 11);
 
-        // const productCronJob: CronJob = new CronJob(
-        //   productScrapTime,
-        //   (): Promise<void> => this.startProductThread(i, product),
-        //   null,
-        //   true
-        // );
+      const productCronJob: CronJob = new CronJob(
+        productScrapTime,
+        (): Promise<void> => this.startProductThread(i, product),
+        null,
+        true
+      );
 
-        this.startProductThread(i, product);
-        this.pool.addProductUrl(product.url);
-        // this.productsCronJobs.push(productCronJob);
-        break;
-      }
-    }
+      this.pool.addProductUrl(product.url);
+      this.productsCronJobs.push(productCronJob);
+
+      logger.info(`${this.loggerHead} ${product.name} schedule`);
+    });
 
     logger.info(`${this.loggerHead} ✅ products page scrapped successfully`);
   }
@@ -219,30 +227,29 @@ class MainThread extends Thread {
   }
 
   private async login(): Promise<void> {
-    const emailAddressInput: ElementHandle = await this.page.$(
-      'input[type="email"][name="emailAddress"]'
-    );
-
-    const passwordInput: ElementHandle = await this.page.$(
-      'input[type="password"][name="password"]'
-    );
-
-    const emailAddressValue: string = await emailAddressInput
-      .evaluate((el: HTMLInputElement): string => el.value);
-
-    const passwordValue: string = await passwordInput
-      .evaluate((el: HTMLInputElement): string => el.value);
+    const emailAddressSelector: string = 'input[type="email"][name="emailAddress"]';
+    const passwordInputSelector: string = 'input[type="password"][name="password"]';
 
     await this.page.$eval('#anchor-acessar', (el: HTMLLinkElement): void => el.click());
     await this.page.waitFor(1000);
 
-    if (!emailAddressValue) {
-      await insertValueLikeTyping(emailAddressInput, process.env.NIKE_LOGIN_EMAIL);
-    }
+    await this.page.focus(emailAddressSelector);
 
-    if (!passwordValue) {
-      await insertValueLikeTyping(passwordInput, process.env.NIKE_LOGIN_PASSWORD);
-    }
+    await this.page.$eval(
+      emailAddressSelector,
+      (el: HTMLInputElement): void => { el.value = ''; }
+    );
+
+    await this.page.keyboard.type(process.env.NIKE_LOGIN_EMAIL);
+
+    await this.page.focus(passwordInputSelector);
+
+    await this.page.$eval(
+      passwordInputSelector,
+      (el: HTMLInputElement): void => { el.value = ''; }
+    );
+
+    await this.page.keyboard.type(process.env.NIKE_LOGIN_PASSWORD);
 
     await this.page.waitFor(1000);
 
